@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figurinhas Express</title>
+
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+  <style>
+    body { font-family: Arial; margin: 0; background: #020617; color: white; }
+    header { text-align: center; padding: 30px; }
+    .container { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; padding: 40px; }
+    .card { background: #1e293b; padding: 25px; border-radius: 16px; width: 260px; }
+    input { width: 100%; padding: 10px; margin-top: 10px; border-radius: 8px; border: none; }
+    button { width: 100%; margin-top: 10px; padding: 12px; border: none; border-radius: 10px; background: #22c55e; color: white; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🚀 Figurinhas Express</h1>
+  <p>Pagamento automático + entrega por e-mail</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h2>Pacote Básico</h2>
+    <p>50 figurinhas</p>
+    <input type="email" id="email1" placeholder="Seu e-mail">
+    <button onclick="comprar('Básico', 'email1')">Comprar R$5</button>
+  </div>
+
+  <div class="card">
+    <h2>Pacote Premium</h2>
+    <p>150 figurinhas</p>
+    <input type="email" id="email2" placeholder="Seu e-mail">
+    <button onclick="comprar('Premium', 'email2')">Comprar R$12</button>
+  </div>
+
+  <div class="card">
+    <h2>Pacote Ultra</h2>
+    <p>300 figurinhas</p>
+    <input type="email" id="email3" placeholder="Seu e-mail">
+    <button onclick="comprar('Ultra', 'email3')">Comprar R$20</button>
+  </div>
+
+</div>
+
+<script>
+  (function(){
+    emailjs.init("yd1DK2O1sQ9DDwBL9");
+  })();
+
+function comprar(pacote, emailId) {
+  const email = document.getElementById(emailId).value;
+
+  if (!email) {
+    alert("Digite seu e-mail");
+    return;
+  }
+
+  alert("Iniciando pagamento...");
+
+  localStorage.setItem("emailCompra", email);
+  localStorage.setItem("pacoteCompra", pacote);
+
+  fetch("http://127.0.0.1:3000/criar-pagamento", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ pacote, email })
+  })
+    .then(res => res.json()) // 🔥 AQUI ESTÁ A CORREÇÃO
+    .then(data => {
+      console.log("RESPOSTA:", data);
+
+      if (data.init_point) {
+        window.location.href = data.init_point; // 🔥 redireciona pro Mercado Pago
+      } else {
+        alert("Erro: link de pagamento não gerado");
+      }
+    })
+    .catch(err => {
+      console.error("ERRO:", err);
+      alert("Erro ao iniciar pagamento");
+    });
+}
+  // quando voltar do pagamento
+  window.onload = function() {
+    const url = window.location.href;
+
+    if (url.includes("status=approved")) {
+      const email = localStorage.getItem("emailCompra");
+      const pacote = localStorage.getItem("pacoteCompra");
+
+      if (email && pacote) {
+        enviarEmail(email, pacote);
+        alert("Pagamento aprovado! Você receberá no e-mail.");
+      }
+    }
+  }
+
+  function enviarEmail(email, pacote) {
+    let linkFigurinhas = "";
+
+    if (pacote === "Básico") {
+      linkFigurinhas = "https://drive.google.com/uc?export=download&id=11YseNUfJVJ3DKJ4LMHGBTLsJH0g3MTz_";
+    } else if (pacote === "Premium") {
+      linkFigurinhas = "https://drive.google.com/uc?export=download&id=1ZaH86_bCuWFG6y4S0OqNANy08zdAMyx6";
+    } else if (pacote === "Ultra") {
+      linkFigurinhas = "https://drive.google.com/uc?export=download&id=1Yq3j4b_J1k44yc8fJAru-Fk0SP5ns3UM";
+    }
+
+    emailjs.send("Luan_moraes1529", "template_ci75rde", {
+      to_email: email,
+      pacote: pacote,
+      link: linkFigurinhas
+    });
+  }
+</script>
+
+</body>
+</html>
