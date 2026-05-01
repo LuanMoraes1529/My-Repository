@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
 
 const app = express();
@@ -14,6 +15,9 @@ const client = new MercadoPagoConfig({
 
 const preferenceClient = new Preference(client);
 
+// =======================
+// CRIAR PAGAMENTO
+// =======================
 app.post("/criar-pagamento", async (req, res) => {
   try {
     const { pacote, email } = req.body;
@@ -34,31 +38,34 @@ app.post("/criar-pagamento", async (req, res) => {
       return res.status(400).json({ error: "Pacote inválido" });
     }
 
-  const response = await preferenceClient.create({
-    body: {
-      items: [
-        {
-          title: `Pacote ${pacote}`,
-          unit_price: valor,
-          quantity: 1,
-          currency_id: "BRL"
-        }
-      ],
-      payer: {
-        email: email
-      },
-      payment_methods: {
-        installments: 1
-      },
-      notification_url: "https://figurinhas-api.onrender.com/webhook", // 👈 ESSA LINHA
-      back_urls: {
-        success: "https://packfigurinhaultra.netlify.app/?status=approved",
-        failure: "https://packfigurinhaultra.netlify.app/?status=failure",
-        pending: "https://packfigurinhaultra.netlify.app/?status=pending"
-      },
-      auto_return: "approved"
-    }
-  });
+    const response = await preferenceClient.create({
+      body: {
+        items: [
+          {
+            title: `Pacote ${pacote}`,
+            unit_price: valor,
+            quantity: 1,
+            currency_id: "BRL"
+          }
+        ],
+        payer: {
+          email: email
+        },
+
+        external_reference: email, // ✅ salva o email
+
+        payment_methods: {
+          installments: 1
+        },
+        notification_url: "https://figurinhas-api.onrender.com/webhook",
+        back_urls: {
+          success: "https://packfigurinhaultra.netlify.app/?status=approved",
+          failure: "https://packfigurinhaultra.netlify.app/?status=failure",
+          pending: "https://packfigurinhaultra.netlify.app/?status=pending"
+        },
+        auto_return: "approved"
+      }
+    });
 
     res.json({
       id: response.id,
@@ -70,19 +77,19 @@ app.post("/criar-pagamento", async (req, res) => {
     res.status(500).json({ error: "Erro ao criar pagamento" });
   }
 });
-const axios = require("axios");
 
+// =======================
+// WEBHOOK
+// =======================
 app.post("/webhook", async (req, res) => {
   try {
     const data = req.body;
 
     console.log("Webhook recebido:", data);
 
-    // Verifica se é notificação de pagamento
     if (data.type === "payment") {
       const paymentId = data.data.id;
 
-      // Consulta o pagamento no Mercado Pago
       const response = await axios.get(
         `https://api.mercadopago.com/v1/payments/${paymentId}`,
         {
@@ -94,17 +101,18 @@ app.post("/webhook", async (req, res) => {
 
       const payment = response.data;
 
-      // Só envia email se estiver aprovado
       if (payment.status === "approved") {
 
-        const email =
-        payment.payer?.email ||
-        payment.additional_info?.payer?.email ||
-        "luanmoraes1529@gmail.com"; // fallback pra teste
+        const email = payment.external_reference; // ✅ sempre confiável
 
-        // Defina o pacote e link manualmente (teste inicial)
-        const pacote = "Premium";
-        const link = "https://seulink.com";
+        if (!email) {
+          console.log("❌ Email não encontrado");
+          return res.sendStatus(200);
+        }
+
+        // 🔥 Ajuste simples por pacote (opcional já preparado)
+        let pacote = "Premium";
+        let link = "https://seulink.com";
 
         // Enviar email via EmailJS
         await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
