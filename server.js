@@ -101,34 +101,40 @@ app.post("/webhook", async (req, res) => {
 
       const payment = response.data;
 
-      if (payment.status === "approved") {
+  if (payment.status === "approved") {
 
-        const email = payment.external_reference; // ✅ sempre confiável
+    let email = null;
+    let pacote = "Premium";
 
-        if (!email) {
-          console.log("❌ Email não encontrado");
-          return res.sendStatus(200);
-        }
+    try {
+      const ref = JSON.parse(payment.external_reference);
+      email = ref.email;
+      pacote = ref.pacote;
+    } catch (e) {
+      console.log("Erro ao ler external_reference:", e);
+    }
 
-        // 🔥 Ajuste simples por pacote (opcional já preparado)
-        let pacote = "Premium";
-        let link = "https://seulink.com";
+    if (!email) {
+      console.log("❌ Email não encontrado");
+      return res.sendStatus(200);
+    }
 
-        // Enviar email via EmailJS
-        await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
-          service_id: "Luan_moraes1529",
-          template_id: "template_ci75rde",
-          user_id: "yd1DK2O1sQ9DDwBL9",
-          accessToken: process.env.EMAILJS_PRIVATE_KEY,
-          template_params: {
-            email: email,
-            pacote: pacote,
-            link: link
-          }
-        });
+    const link = "https://seulink.com";
 
-        console.log("✅ Email enviado para:", email);
+    await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
+      service_id: "Luan_moraes1529",
+      template_id: "template_ci75rde",
+      user_id: "yd1DK2O1sQ9DDwBL9",
+      accessToken: process.env.EMAILJS_PRIVATE_KEY,
+      template_params: {
+        email: email,
+        pacote: pacote,
+        link: link
       }
+    });
+
+    console.log("✅ Email enviado para:", email);
+  }
     }
 
     res.sendStatus(200);
