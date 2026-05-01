@@ -108,6 +108,7 @@ app.post("/webhook", async (req, res) => {
           service_id: "Luan_moraes1529",
           template_id: "template_ci75rde",
           user_id: "yd1DK2O1sQ9DDwBL9",
+          accessToken: process.env.EMAILJS_PRIVATE_KEY,
           template_params: {
             email: email,
             pacote: pacote,
