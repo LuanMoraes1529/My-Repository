@@ -33,26 +33,30 @@ app.post("/criar-pagamento", async (req, res) => {
       return res.status(400).json({ error: "Pacote inválido" });
     }
 
-    const response = await preferenceClient.create({
-      body: {
-        items: [
-          {
-            title: `Pacote ${pacote}`,
-            unit_price: valor,
-            quantity: 1
-          }
-        ],
-        payer: {
-          email: email
-        },
-        back_urls: {
-          success: "https://packfigurinhaultra.netlify.app/?status=approved",
-          failure: "https://packfigurinhaultra.netlify.app/?status=failure",
-          pending: "https://packfigurinhaultra.netlify.app/?status=pending"
-        },
-        auto_return: "approved"
-      }
-    });
+  const response = await preferenceClient.create({
+    body: {
+      items: [
+        {
+          title: `Pacote ${pacote}`,
+          unit_price: valor,
+          quantity: 1,
+          currency_id: "BRL"
+        }
+      ],
+      payer: {
+        email: email
+      },
+      payment_methods: {
+        installments: 1
+      },
+      back_urls: {
+        success: "https://packfigurinhaultra.netlify.app/?status=approved",
+        failure: "https://packfigurinhaultra.netlify.app/?status=failure",
+        pending: "https://packfigurinhaultra.netlify.app/?status=pending"
+      },
+      auto_return: "approved"
+    }
+  });
 
     res.json({
       id: response.id,
