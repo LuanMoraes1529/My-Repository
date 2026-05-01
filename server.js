@@ -5,6 +5,7 @@ const { MercadoPagoConfig, Preference } = require("mercadopago");
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 const client = new MercadoPagoConfig({
@@ -49,6 +50,7 @@ app.post("/criar-pagamento", async (req, res) => {
       payment_methods: {
         installments: 1
       },
+      notification_url: "https://figurinhas-api.onrender.com/webhook", // 👈 ESSA LINHA
       back_urls: {
         success: "https://packfigurinhaultra.netlify.app/?status=approved",
         failure: "https://packfigurinhaultra.netlify.app/?status=failure",
@@ -66,6 +68,62 @@ app.post("/criar-pagamento", async (req, res) => {
   } catch (error) {
     console.error("ERRO AO CRIAR PAGAMENTO:", error);
     res.status(500).json({ error: "Erro ao criar pagamento" });
+  }
+});
+const axios = require("axios");
+
+app.post("/webhook", async (req, res) => {
+  try {
+    const data = req.body;
+
+    console.log("Webhook recebido:", data);
+
+    // Verifica se é notificação de pagamento
+    if (data.type === "payment") {
+      const paymentId = data.data.id;
+
+      // Consulta o pagamento no Mercado Pago
+      const response = await axios.get(
+        `https://api.mercadopago.com/v1/payments/${paymentId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+          }
+        }
+      );
+
+      const payment = response.data;
+
+      // Só envia email se estiver aprovado
+      if (payment.status === "approved") {
+
+        const email = payment.payer.email;
+
+        // Defina o pacote e link manualmente (teste inicial)
+        const pacote = "Premium";
+        const link = "https://seulink.com";
+
+        // Enviar email via EmailJS
+        await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
+          service_id: "Luan_moraes1529",
+          template_id: "template_ci75rde",
+          user_id: "yd1DK2O1sQ9DDwBL9",
+          template_params: {
+            email: email,
+            pacote: pacote,
+            link: link
+          }
+        });
+
+        console.log("✅ Email enviado para:", email);
+      }
+    }
+
+    res.sendStatus(200);
+
+  } catch (error) {
+    console.error("❌ Erro no webhook:", error.response?.data || error.message);
+    res.sendStatus(500);
   }
 });
 
