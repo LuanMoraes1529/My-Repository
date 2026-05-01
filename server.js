@@ -97,7 +97,10 @@ app.post("/webhook", async (req, res) => {
       // Só envia email se estiver aprovado
       if (payment.status === "approved") {
 
-        const email = payment.payer.email;
+        const email =
+        payment.payer?.email ||
+        payment.additional_info?.payer?.email ||
+        "luanmoraes1529@gmail.com"; // fallback pra teste
 
         // Defina o pacote e link manualmente (teste inicial)
         const pacote = "Premium";
