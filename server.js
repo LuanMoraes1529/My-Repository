@@ -77,9 +77,8 @@ app.post("/criar-pagamento", async (req, res) => {
   }
 });
 
-// =======================
-// WEBHOOK
-// =======================
+const processedPayments = new Set();
+
 app.post("/webhook", async (req, res) => {
   try {
     const data = req.body;
@@ -88,6 +87,11 @@ app.post("/webhook", async (req, res) => {
 
     if (data.type === "payment") {
       const paymentId = data.data.id;
+
+      if (processedPayments.has(paymentId)) {
+        console.log("⚠️ Pagamento já processado");
+        return res.sendStatus(200);
+      }
 
       const response = await axios.get(
         `https://api.mercadopago.com/v1/payments/${paymentId}`,
@@ -100,40 +104,57 @@ app.post("/webhook", async (req, res) => {
 
       const payment = response.data;
 
-  if (payment.status === "approved") {
+      if (
+        payment.status === "approved" &&
+        payment.status_detail === "accredited" &&
+        payment.currency_id === "BRL"
+      ) {
 
-    let email = null;
-    let pacote = "Premium";
+        let email = null;
+        let pacote = "Premium";
 
-    try {
-      const ref = JSON.parse(payment.external_reference);
-      email = ref.email;
-      pacote = ref.pacote;
-    } catch (e) {
-      console.log("Erro ao ler external_reference:", e);
-    }
+        try {
+          const ref = JSON.parse(payment.external_reference);
+          email = ref.email;
+          pacote = ref.pacote;
+        } catch (e) {
+          console.log("Erro ao ler external_reference:", e);
+        }
 
-    if (!email) {
-      console.log("❌ Email não encontrado");
-      return res.sendStatus(200);
-    }
+        if (!email) {
+          console.log("❌ Email não encontrado");
+          return res.sendStatus(200);
+        }
 
-    const link = "https://seulink.com";
+        const valores = {
+          "Básico": 5,
+          "Premium": 12,
+          "Ultra": 20
+        };
 
-    await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
-      service_id: "Luan_moraes1529",
-      template_id: "template_ci75rde",
-      user_id: "yd1DK2O1sQ9DDwBL9",
-      accessToken: process.env.EMAILJS_PRIVATE_KEY,
-      template_params: {
-        email: email,
-        pacote: pacote,
-        link: link
+        if (payment.transaction_amount !== valores[pacote]) {
+          console.log("❌ Valor inválido");
+          return res.sendStatus(200);
+        }
+
+        processedPayments.add(paymentId);
+
+        const link = "https://seulink.com";
+
+        await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
+          service_id: "Luan_moraes1529",
+          template_id: "template_ci75rde",
+          user_id: "yd1DK2O1sQ9DDwBL9",
+          accessToken: process.env.EMAILJS_PRIVATE_KEY,
+          template_params: {
+            email: email,
+            pacote: pacote,
+            link: link
+          }
+        });
+
+        console.log("✅ Email enviado para:", email);
       }
-    });
-
-    console.log("✅ Email enviado para:", email);
-  }
     }
 
     res.sendStatus(200);
