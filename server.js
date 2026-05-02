@@ -119,7 +119,7 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    const link = "https://seulink.com";
+    const link = `https://figurinhas-api.onrender.com/download?email=${email}`;
 
     await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
       service_id: "Luan_moraes1529",
