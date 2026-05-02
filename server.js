@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const { MercadoPagoConfig, Preference } = require("mercadopago");
+const pagamentosAprovados = new Set();
 
 const app = express();
 
@@ -52,7 +53,10 @@ app.post("/criar-pagamento", async (req, res) => {
           email: email
         },
 
-        external_reference: email, // ✅ salva o email
+        external_reference: JSON.stringify({
+        email: email,
+        pacote: pacote
+      }),
 
         payment_methods: {
           installments: 1
@@ -64,6 +68,7 @@ app.post("/criar-pagamento", async (req, res) => {
           pending: "https://packfigurinhaultra.netlify.app/?status=pending"
         },
         auto_return: "approved"
+        
       }
     });
 
@@ -77,7 +82,18 @@ app.post("/criar-pagamento", async (req, res) => {
     res.status(500).json({ error: "Erro ao criar pagamento" });
   }
 });
+// =======================
+// DOWNLOAD PROTEGIDO
+// =======================
+app.get("/download", (req, res) => {
+  const email = req.query.email;
 
+  if (!email || !pagamentosAprovados.has(email)) {
+    return res.status(403).send("Acesso negado");
+  }
+
+  res.download("pack.zip");
+});
 // =======================
 // WEBHOOK
 // =======================
@@ -104,7 +120,7 @@ app.post("/webhook", async (req, res) => {
   if (payment.status === "approved") {
 
     let email = null;
-    let pacote = "Premium";
+    let pacote = null;
 
     try {
       const ref = JSON.parse(payment.external_reference);
@@ -118,6 +134,8 @@ app.post("/webhook", async (req, res) => {
       console.log("❌ Email não encontrado");
       return res.sendStatus(200);
     }
+    pagamentosAprovados.add(email);
+
 
     const link = `https://figurinhas-api.onrender.com/download?email=${email}`;
 
