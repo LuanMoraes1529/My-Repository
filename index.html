@@ -89,38 +89,7 @@ function comprar(pacote, emailId) {
       alert("Erro ao iniciar pagamento");
     });
 }
-  // quando voltar do pagamento
-  window.onload = function() {
-    const url = window.location.href;
 
-    if (url.includes("status=approved")) {
-      const email = localStorage.getItem("emailCompra");
-      const pacote = localStorage.getItem("pacoteCompra");
-
-      if (email && pacote) {
-        enviarEmail(email, pacote);
-        alert("Pagamento aprovado! Você receberá no e-mail.");
-      }
-    }
-  }
-
-  function enviarEmail(email, pacote) {
-    let linkFigurinhas = "";
-
-    if (pacote === "Básico") {
-      linkFigurinhas = "https://drive.google.com/uc?export=download&id=11YseNUfJVJ3DKJ4LMHGBTLsJH0g3MTz_";
-    } else if (pacote === "Premium") {
-      linkFigurinhas = "https://drive.google.com/uc?export=download&id=1ZaH86_bCuWFG6y4S0OqNANy08zdAMyx6";
-    } else if (pacote === "Ultra") {
-      linkFigurinhas = "https://drive.google.com/uc?export=download&id=1Yq3j4b_J1k44yc8fJAru-Fk0SP5ns3UM";
-    }
-
-    emailjs.send("Luan_moraes1529", "template_ci75rde", {
-      to_email: email,
-      pacote: pacote,
-      link: linkFigurinhas
-    });
-  }
 </script>
 
 </body>
