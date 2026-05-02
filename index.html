@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Figurinhas Express</title>
 
+  <!-- EmailJS -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
   <style>
     body { font-family: Arial; margin: 0; background: #020617; color: white; }
     header { text-align: center; padding: 30px; }
@@ -47,6 +50,10 @@
 </div>
 
 <script>
+  (function(){
+    emailjs.init("yd1DK2O1sQ9DDwBL9");
+  })();
+
 function comprar(pacote, emailId) {
   const email = document.getElementById(emailId).value;
 
@@ -54,6 +61,9 @@ function comprar(pacote, emailId) {
     alert("Digite seu e-mail");
     return;
   }
+
+  localStorage.setItem("emailCompra", email);
+  localStorage.setItem("pacoteCompra", pacote);
 
   fetch("https://figurinhas-api.onrender.com/criar-pagamento", {
     method: "POST",
@@ -77,24 +87,38 @@ function comprar(pacote, emailId) {
       alert("Erro ao iniciar pagamento");
     });
 }
+  // quando voltar do pagamento
+  window.onload = function() {
+    const url = window.location.href;
 
-// Apenas mensagem visual (SEGURO)
-window.onload = function() {
-  const params = new URLSearchParams(window.location.search);
-  const status = params.get("status");
+    if (url.includes("status=approved")) {
+      const email = localStorage.getItem("emailCompra");
+      const pacote = localStorage.getItem("pacoteCompra");
 
-  if (status === "approved") {
-    alert("Pagamento aprovado! Você receberá no e-mail em instantes.");
+      if (email && pacote) {
+        enviarEmail(email, pacote);
+        alert("Pagamento aprovado! Você receberá no e-mail.");
+      }
+    }
   }
 
-  if (status === "failure") {
-    alert("Pagamento não aprovado.");
-  }
+  function enviarEmail(email, pacote) {
+    let linkFigurinhas = "";
 
-  if (status === "pending") {
-    alert("Pagamento pendente. Aguarde a confirmação.");
+    if (pacote === "Básico") {
+      linkFigurinhas = "https://drive.google.com/uc?export=download&id=11YseNUfJVJ3DKJ4LMHGBTLsJH0g3MTz_";
+    } else if (pacote === "Premium") {
+      linkFigurinhas = "https://drive.google.com/uc?export=download&id=1ZaH86_bCuWFG6y4S0OqNANy08zdAMyx6";
+    } else if (pacote === "Ultra") {
+      linkFigurinhas = "https://drive.google.com/uc?export=download&id=1Yq3j4b_J1k44yc8fJAru-Fk0SP5ns3UM";
+    }
+
+    emailjs.send("Luan_moraes1529", "template_ci75rde", {
+      to_email: email,
+      pacote: pacote,
+      link: linkFigurinhas
+    });
   }
-}
 </script>
 
 </body>
