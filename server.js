@@ -132,26 +132,26 @@ app.post("/webhook", async (req, res) => {
 
   if (payment.status === "approved") {
 
-    let email = null;
-    let pacote = null;
+  let email = null;
+  let pacote = null;
 
-    const rawRef = payment.external_reference;
+  const rawRef = payment.external_reference;
 
-    // 🔍 LOG PRA VER O QUE ESTÁ VINDO
-    console.log("External Reference RAW:", rawRef);
+  // 🔍 LOG PRA VER O QUE ESTÁ VINDO
+  console.log("External Reference RAW:", rawRef);
 
-    try {
-      const ref = JSON.parse(rawRef);
-      email = ref.email;
-      pacote = ref.pacote;
-    } catch (e) {
-      console.log("Não é JSON, tentando como string simples");
+  try {
+    const ref = JSON.parse(rawRef);
+    email = ref.email;
+    pacote = ref.pacote;
+  } catch (e) {
+    console.log("Não é JSON, tentando como string simples");
 
-      // fallback caso seja só o email
-      if (typeof rawRef === "string" && rawRef.includes("@")) {
-        email = rawRef;
-      }
+    // fallback caso seja só o email
+    if (typeof rawRef === "string" && rawRef.includes("@")) {
+      email = rawRef;
     }
+  }
 
     if (!email) {
       console.log("❌ Email não encontrado");
@@ -168,7 +168,7 @@ app.post("/webhook", async (req, res) => {
       user_id: "yd1DK2O1sQ9DDwBL9",
       accessToken: process.env.EMAILJS_PRIVATE_KEY,
       template_params: {
-        email: email,
+        to_email: email,
         pacote: pacote,
         link: link
       }
