@@ -135,12 +135,22 @@ app.post("/webhook", async (req, res) => {
     let email = null;
     let pacote = null;
 
+    const rawRef = payment.external_reference;
+
+    // 🔍 LOG PRA VER O QUE ESTÁ VINDO
+    console.log("External Reference RAW:", rawRef);
+
     try {
-      const ref = JSON.parse(payment.external_reference);
+      const ref = JSON.parse(rawRef);
       email = ref.email;
       pacote = ref.pacote;
     } catch (e) {
-      console.log("Erro ao ler external_reference:", e);
+      console.log("Não é JSON, tentando como string simples");
+
+      // fallback caso seja só o email
+      if (typeof rawRef === "string" && rawRef.includes("@")) {
+        email = rawRef;
+      }
     }
 
     if (!email) {
