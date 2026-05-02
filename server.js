@@ -59,6 +59,7 @@ app.post("/criar-pagamento", async (req, res) => {
         },
         notification_url: "https://figurinhas-api.onrender.com/webhook",
         back_urls: {
+          success: "https://packfigurinhaultra.netlify.app/?status=approved",
           failure: "https://packfigurinhaultra.netlify.app/?status=failure",
           pending: "https://packfigurinhaultra.netlify.app/?status=pending"
         },
