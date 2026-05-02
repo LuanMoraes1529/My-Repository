@@ -103,11 +103,24 @@ app.post("/webhook", async (req, res) => {
 
     console.log("Webhook recebido:", data);
 
-    if (data.type === "payment") {
-      const paymentId = data.data.id;
+    if (data.topic === "merchant_order") {
+      
+      const merchantOrder = await axios.get(data.resource, {
+  headers: {
+    Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
+  }
+});
 
+      const order = merchantOrder.data;
+
+      // pega o primeiro pagamento aprovado
+      const pagamento = order.payments.find(p => p.status === "approved");
+
+      if (!pagamento) {
+        return res.sendStatus(200);
+      }
       const response = await axios.get(
-        `https://api.mercadopago.com/v1/payments/${paymentId}`,
+    `https://api.mercadopago.com/v1/payments/${pagamento.id}`,
         {
           headers: {
             Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`
